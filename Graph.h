@@ -43,19 +43,6 @@ class Graph{
         bool searchNode(int id);
         Node* getNode(int id);
 
-        //methods phase1
-        void topologicalSorting();
-        void breadthFirstSearch(ofstream& output_file);
-        Graoh* getVertexInduced(int* listIdNodes);
-        Graph* agmKuskal();
-        Graph* agmPrim();
-        float floydMarshall(int idSource, int idTarget);
-        float dijkstra(int idSource, int idTarget);
-
-        //methods phase1
-        float greed();
-        float greedRandom();
-        float greedRactiveRandom();
     private:
         //Auxiliar methods
 
