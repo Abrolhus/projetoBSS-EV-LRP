@@ -19,6 +19,7 @@ Node::Node(int id){
     this->last_edge = nullptr;
     this->next_node = nullptr;
 
+
 };
 
 // Destructor
