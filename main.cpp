@@ -14,15 +14,25 @@
 
 using namespace std;
 
+float distance(int x1, int y1, int x2, int y2)
+{
+    return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2) * 1.0);
+}
+
+
 int main(int argc, char const *argv[]) {
     Graph* leitura(ifstream& input_file);
     ifstream input_file;
     input_file.open(argv[1], ios::in);
     leitura(input_file);
-    cout << "....";
+    cout << "...." << endl;
+    
     return 0;
 }
+
+
 Graph* leitura(ifstream& input_file){
+
     Graph* graph;
     string line;
     string value;
@@ -46,7 +56,7 @@ Graph* leitura(ifstream& input_file){
                 }
                 cout << value << endl;
                 nodeCount = std::stoi(value);
-                cout << nodeCount << "node coutn << " << endl;
+                //cout << nodeCount << "node coutn << " << endl;
             }
         }
         else if(line == "VEHICLE_CAP_SECTION\r") {
@@ -163,6 +173,35 @@ Graph* leitura(ifstream& input_file){
         }
     }
 
+    cout << endl << endl;
+    float** matrix = new float*[nodeCount];
+    for (int i = 0; i < nodeCount; ++i){
+        matrix[i] = new float[nodeCount];
+    }
+
+    for (int i=0;i<nodeCount;i++){
+        for(int j = 0; j< nodeCount; j++){
+            matrix[i][j] = distance(nodeCoords[i].first,nodeCoords[i].second,nodeCoords[j].first,nodeCoords[j].second);
+        }
+    }
+
+    for (int i=0;i<nodeCount;i++){
+        for(int j = 0; j< nodeCount; j++){
+            cout << matrix[i][j] << " ";
+            if (matrix[i][j] > batteryCapacity){
+                batteryCapacity = matrix[i][j];
+            }
+        }
+        cout << endl;
+    }
+    
+    batteryCapacity = batteryCapacity / 2;
+    cout << endl << "Bateria Max veículo: " << batteryCapacity << endl;
+    
+    for (int i = 0; i < nodeCount; ++i){
+        delete [] matrix[i];
+    }
+    delete [] matrix;
 
     return graph;
 }
