@@ -174,34 +174,29 @@ Graph* leitura(ifstream& input_file){
     }
 
     cout << endl << endl;
-    float** matrix = new float*[nodeCount];
-    for (int i = 0; i < nodeCount; ++i){
-        matrix[i] = new float[nodeCount];
-    }
+    
+    std::vector<std::vector<float>> matrix;
 
-    for (int i=0;i<nodeCount;i++){
-        for(int j = 0; j< nodeCount; j++){
-            matrix[i][j] = distance(nodeCoords[i].first,nodeCoords[i].second,nodeCoords[j].first,nodeCoords[j].second);
+    for(int i = 0; i < nodeCount; i++){
+        std::vector<float> aux;
+        for(int j = 0 ; j <nodeCount;j++){
+            aux.push_back(distance(nodeCoords[i].first,nodeCoords[i].second,nodeCoords[j].first,nodeCoords[j].second));
         }
+        matrix.push_back(aux);
     }
 
-    for (int i=0;i<nodeCount;i++){
-        for(int j = 0; j< nodeCount; j++){
-            cout << matrix[i][j] << " ";
-            if (matrix[i][j] > batteryCapacity){
+    for(int i = 0; i < nodeCount; i++){
+        for(int j = 0 ; j <nodeCount;j++){
+         cout << matrix[i][j] << " ";
+         if (matrix[i][j] > batteryCapacity){
                 batteryCapacity = matrix[i][j];
             }
         }
         cout << endl;
     }
-    
+
     batteryCapacity = batteryCapacity / 2;
     cout << endl << "Bateria Max veículo: " << batteryCapacity << endl;
-    
-    for (int i = 0; i < nodeCount; ++i){
-        delete [] matrix[i];
-    }
-    delete [] matrix;
 
     return graph;
 }
