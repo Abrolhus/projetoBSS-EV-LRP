@@ -29,7 +29,8 @@ int main(int argc, char const *argv[]) {
     input_file.open(argv[1], ios::in);
     Problem* problem = leitura(input_file);
     // greedyAlgorithm(problem);
-    greedyAlg(problem);
+    Solution* Sol = greedyAlg(problem);
+    bool isFeasible = isFeasibleSolution(Sol, problem);
     cout << "...." << endl;
     return 0;
 }

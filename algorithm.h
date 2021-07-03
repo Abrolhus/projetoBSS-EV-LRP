@@ -10,5 +10,6 @@
 bool isValidSolution(Solution solution, Problem problem);
 Solution* greedyAlgorithm(Problem* problem);
 Solution* greedyAlg(Problem*);
+bool isFeasibleSolution(Solution* Sol, Problem* Prob);
 
 #endif //BSS_ALGORITHM_H

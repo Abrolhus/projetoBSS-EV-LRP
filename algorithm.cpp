@@ -26,53 +26,6 @@ public:
         return (this->cost < that.cost);
     }
 };
-Solution* greedyAlgorithm(Problem* problem) {
-    Solution* solution;
-    std::vector<float> remainingVehicleCapacities(problem->getNVehicles(), problem->getVehicleCapacity());
-    std::vector<float> remainingVehicleBattery(problem->getNVehicles(), problem->getVehicleMaxBattery());
-    float maxBattery = problem->getVehicleMaxBattery();
-    std::vector<std::vector<int>> routes(problem->getNVehicles());
-    std::vector<bool> wasVisited; // indexes of unvisited clients;
-    std::set<int> unvisitedClients;
-    for(int i = 1; i < problem->getNClients(); i++){
-        wasVisited.push_back(false);
-        unvisitedClients.insert(i);
-    } // TODO: use vector constructor to create this.
-    for(auto& rout : routes){
-        rout.push_back(0);
-    } // every rout starts on depot
-    solution = new Solution(Pr);
-    for(int i = 0; i < MAXITER; i++){
-        int bestRout, nextNode =-1, currentNode,  bestCurrentNode;
-        float dist, bestDistance = 1e6;
-        for(int j = 0; j < routes.size(); j++){
-            currentNode = routes[j].back();
-            for(int client : unvisitedClients){
-                if(problem->getDemand(client) > remainingVehicleCapacities[j]){ continue; }
-                if(problem->getDistance(currentNode, client) + problem->getDistance(client, 0) > remainingVehicleBattery[j]){ continue; }
-                dist = problem->getDistance(currentNode, client);
-                std::cout << client;
-                if(dist < bestDistance) {
-                    bestDistance = dist;
-                    nextNode = client;
-                    bestRout = j;
-                    bestCurrentNode = currentNode;
-                }
-            }
-        }
-        if(nextNode == -1) {
-            std::cout << "invalid solution found";
-            return solution;
-        }
-        routes[bestRout].push_back(nextNode);
-        remainingVehicleCapacities[bestRout] -= problem->getDemand(nextNode);
-        remainingVehicleBattery[bestRout] -= problem->getDistance(bestCurrentNode, nextNode);
-        unvisitedClients.erase(nextNode);
-        if(unvisitedClients.empty()) {
-            return solution; }
-    }
-    return solution;
-}
 
 class comparator_class {
 public:
@@ -84,7 +37,7 @@ public:
 };
 
 Solution* greedyAlg(Problem* Prob){
-    Solution* Sol = new Solution;
+    Solution* Sol = new Solution(Prob->getNVehicles());
     //std::set<std::vector<float>, comparator_class> pathList;
     std::set<Path> pathList;
     std::set<int> possibleNextNodes;
@@ -102,7 +55,7 @@ Solution* greedyAlg(Problem* Prob){
 
     for(int i = 1; i < Prob->getNNodes(); i++){
         possibleNextNodes.insert(i); // #1 to #Size-1; #0 -> depot
-        if(i < Prob->getNClients()) {
+        if(i <= Prob->getNClients()) {
             unvisitedClients.insert(i);
         }
         for(auto& vehicle : wasVisitedByK){
@@ -130,13 +83,20 @@ Solution* greedyAlg(Problem* Prob){
                         cost = Prob->getDistance(currentNode, nodeIndex) + Prob->getBssCost();
                         label = nodeLabel::ToBss;
                     }
-                } else {
-                    if (Prob->getDistance(currentNode, nodeIndex) + Prob->getDistance(nodeIndex, DEPOT) >
-                        remainingVehicleBattery[k] ||
-                        Prob->getDemand(nodeIndex) > remainingVehicleCapacities[k]) { continue; }
+                } else { // if is CLIENT
+                    bool hasBssNearby = false;
+                    for(int i = Prob->getFirstBssIndex(); i < Prob->getNNodes(); i++){
+                        if(Prob->getDistance(currentNode, nodeIndex) + Prob->getDistance(nodeIndex, i) <= remainingVehicleBattery[k]){
+                            hasBssNearby = true;
+                            break;
+                        }
+                    }
+                    if ((!hasBssNearby && Prob->getDistance(currentNode, nodeIndex) + Prob->getDistance(nodeIndex, DEPOT) >
+                        remainingVehicleBattery[k]) || Prob->getDemand(nodeIndex) > remainingVehicleCapacities[k]) { continue; }
                     cost = Prob->getDistance(currentNode, nodeIndex);
                     label = nodeLabel::Client;
                     batteryCost += Prob->getDistance((currentNode), nodeIndex); // TODO(abreu): Redundante a linha 124;
+                    demand = Prob->getDemand(nodeIndex);
                 }
                 auto path = new Path(k, nodeIndex, label, cost, demand, batteryCost);
                 int flag = 0;
@@ -159,7 +119,7 @@ Solution* greedyAlg(Problem* Prob){
             possibleNextNodes.erase((chosenPath.destination));
             remainingVehicleBattery[chosenPath.vehicle] -= chosenPath.batteryCost;
             Sol->routes[chosenPath.vehicle].push_back(chosenPath.destination);
-            remainingVehicleCapacities[chosenPath.vehicle] -= chosenPath.batteryCost;
+            remainingVehicleCapacities[chosenPath.vehicle] -= chosenPath.demand;
         } else if (chosenPath.label == nodeLabel::Bss) {
             remainingVehicleBattery[chosenPath.vehicle] = Prob->getVehicleMaxBattery();
             Sol->routes[chosenPath.vehicle].push_back(chosenPath.destination);
@@ -181,8 +141,30 @@ Solution* greedyAlg(Problem* Prob){
                     route.push_back(0);
                 }
             }
+            for(int i = 0; i < Prob->getNNodes() - Prob->getNClients(); i++){
+                if(wasInstalledBss[i]){
+                    Sol->bssLocations.insert(i + Prob->getFirstBssIndex());
+                }
+            }
             return Sol;
         }
     }
     return Sol;
+}
+bool isFeasibleSolution(Solution* Sol, Problem* Prob){
+    std::vector<float> vehicleCapacities(Prob->getNVehicles(), Prob->getVehicleCapacity());
+    std::vector<float> vehicleBatteries(Prob->getNVehicles(), Prob->getVehicleMaxBattery());
+    for(int k = 0; k < Sol->routes.size(); k++){
+        int lastNode = 0;
+        for(auto node : Sol->routes[k]){
+            vehicleCapacities[k] -= Prob->getDemand(node);
+            vehicleBatteries[k] -= Prob->getDistance(lastNode, node); // will be zero for (0,0)
+            if(vehicleBatteries[k] < 0 || vehicleCapacities[k] < 0){ return false; }
+            if(Sol->bssLocations.find(node) != Sol->bssLocations.end()){
+                vehicleBatteries[k] = Prob->getVehicleMaxBattery();
+            }
+            lastNode = node;
+        }
+    }
+    return true;
 }
