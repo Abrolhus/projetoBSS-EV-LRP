@@ -1,7 +1,7 @@
 //
 // Created by abrolhus on 23/06/2021.
 //
-#include "Graph.h"
+#include "Graph/Graph.h"
 #include <iostream>
 #include <sstream>
 stringstream graphToGraphViz(Graph* graph){

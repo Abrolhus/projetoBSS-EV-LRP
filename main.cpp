@@ -7,49 +7,53 @@
 #include <iomanip>
 #include <stdlib.h>
 #include <chrono>
-#include "Graph.h"
-#include "Node.h"
+#include "Graph/Graph.h"
+#include "Graph/Node.h"
+#include "Problem.h"
+#include "algorithm.h"
 #include <vector>
 #include <sstream>
 
 using namespace std;
 
-float distance(int x1, int y1, int x2, int y2)
+float distance(float x1, float y1, float x2, float y2)
 {
     return sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2) * 1.0);
 }
 
 
 int main(int argc, char const *argv[]) {
-    Graph* leitura(ifstream& input_file);
-    Graph* leituraParaGraph(ifstream& input_file);
+    Problem* leitura(ifstream& input_file);
+    // Graph* leituraParaGraph(ifstream& input_file);
     ifstream input_file;
     input_file.open(argv[1], ios::in);
-    leitura(input_file);
+    Problem* problem = leitura(input_file);
+    // greedyAlgorithm(problem);
+    greedyAlg(problem);
     cout << "...." << endl;
-    input_file.open(argv[1], ios::in);
-    leituraParaGraph(input_file);
-
     return 0;
 }
 
 
-Graph* leitura(ifstream& input_file){
+Problem* leitura(ifstream& input_file){
 
-    Graph* graph;
+    Problem* problem;
     string line;
     string value;
 
     int nodeCount, vehicleCapacity, nodeBase, batteryCapacity, bssCost;
+    int nVehicles = 2; // TODO: get number of vehicles from filename;
     int bssCount;
-    std::vector<std::pair<int, int>> nodeCoords;
-    std::vector<std::pair<int, int>> bssCoords;
-    std::vector<int> nodeDemands;
+    std::vector<std::pair<float, float>> nodeCoords;
+    std::vector<std::pair<float, float>> bssCoords;
+    std::vector<std::pair<float, float>> allCoords; // 0 -> deposit; 1 to N -> clients; N+1 to N+B -> bss`s
+    std::vector<float> nodeDemands;
 
     // auxiliar variables:
     stringstream ss;
     int aux;
 
+    //allCoords.push_back(std::pair<float, float>(1.f, -1.f));
     while(getline(input_file,line) && line != "END_FILE\r"){
         if(line == "NODE_COUNT_SECTION\r") {
             cout << endl;
@@ -74,7 +78,7 @@ Graph* leitura(ifstream& input_file){
         }
         else if(line == "NODE_COORD_SECTION\r") {
             cout << endl;
-            std::pair<int, int> coord;
+            std::pair<float, float> coord;
             int nodeIndex;
             while (getline(input_file, value) && value != "END_SECTION\r"){
                 if ( !value.empty() && value[value.size()-1] == '\r' ) {
@@ -89,6 +93,7 @@ Graph* leitura(ifstream& input_file){
                 coord.second = aux;
                 cout << value << endl;
                 nodeCoords.push_back(coord);
+                allCoords.push_back(coord);
             }
         }
         else if(line == "NODE_DEMAND_SECTION\r") {
@@ -152,12 +157,13 @@ Graph* leitura(ifstream& input_file){
                 ss.clear();
                 ss << value;
                 ss >> bssCount;
+                bssCount -= 1; // DONT want to count depot as a valid BSS location;
                 cout << value << endl;
             }
         }
         else if(line == "CANDIDATE_BSS_COORD_SECTION\r") {
             cout << endl;
-            std::pair<int, int> coord;
+            std::pair<float, float> coord;
             int bssIndex;
             while (getline(input_file, value) && value != "END_SECTION\r"){
                 if ( !value.empty() && value[value.size()-1] == '\r' ) {
@@ -167,23 +173,26 @@ Graph* leitura(ifstream& input_file){
                 ss << value;
                 ss >> bssIndex;
                 ss >> aux;
-                coord.first = aux;
+                coord.first = (float)aux;
                 ss >> aux;
-                coord.second = aux;
+                coord.second = (float)aux;
+                if(coord == std::pair<float,float>{1, -1}) { continue; }
                 bssCoords.push_back(coord);
+                allCoords.push_back(coord);
                 cout << value << endl;
             }
         }
     }
 
     cout << endl << endl;
-    
+
     std::vector<std::vector<float>> matrix;
 
-    for(int i = 0; i < nodeCount; i++){
+    for(int i = 0; i < allCoords.size(); i++){
         std::vector<float> aux;
-        for(int j = 0 ; j <nodeCount;j++){
-            aux.push_back(distance(nodeCoords[i].first,nodeCoords[i].second,nodeCoords[j].first,nodeCoords[j].second));
+        aux.reserve(allCoords.size());
+    for(int j = 0 ; j <allCoords.size();j++){
+            aux.push_back(distance(allCoords[i].first,allCoords[i].second,allCoords[j].first,allCoords[j].second));
         }
         matrix.push_back(aux);
     }
@@ -197,14 +206,15 @@ Graph* leitura(ifstream& input_file){
         }
         cout << endl;
     }
-
+    batteryCapacity = ceil(1.2*batteryCapacity);
+    bssCost = ceil(0.5*batteryCapacity);
+    problem = new Problem(vehicleCapacity, nVehicles, bssCount, batteryCapacity, nodeCount-1, bssCost, nodeDemands, matrix);
     batteryCapacity = batteryCapacity / 2;
     cout << endl << "Bateria Max veículo: " << batteryCapacity << endl;
     input_file.close();
 
-    return graph;
+    return problem;
 }
-
 Graph* leituraParaGraph(ifstream& input_file){
     //TODO(abreu): separar ou juntar parte de leitura de arquivo com criacao do grafo.
     Graph* graph;
