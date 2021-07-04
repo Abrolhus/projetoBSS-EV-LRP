@@ -7,9 +7,9 @@
 #include "Solution.h"
 #include "Problem.h"
 
-bool isValidSolution(Solution solution, Problem problem);
-Solution* greedyAlgorithm(Problem* problem);
 Solution* greedyAlg(Problem*);
-bool isFeasibleSolution(Solution* Sol, Problem* Prob);
+bool isFeasibleSolution(Solution* Sol, Problem* Prob, float& cost);
+void localSearch(Solution* returnSolution, Solution* Sol, Problem* Prob);
+bool isFeasibleRoute(std::vector<int>& route, Problem* Prob, Solution* Sol, float& cost);
 
 #endif //BSS_ALGORITHM_H

@@ -6,3 +6,6 @@
 #define BSS_UTILS_H
 
 #endif //BSS_UTILS_H
+#include "Solution.h"
+#include "Problem.h"
+void solutionToCsv(Solution*, Problem*);

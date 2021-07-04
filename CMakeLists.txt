@@ -4,7 +4,7 @@ project(bss)
 set(SOURCES
         Graph/Edge.cpp
         Graph/Graph.cpp
-        Graph/Node.cpp solution.cpp Solution.h algorithm.cpp Problem.cpp Problem.h
-        main.cpp algorithm.h)
+        Graph/Node.cpp solution.cpp algorithm.cpp Problem.cpp utils.cpp
+        main.cpp)
         #utils.cpp)
 add_executable(run ${SOURCES})

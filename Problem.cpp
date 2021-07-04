@@ -9,7 +9,7 @@ float Problem::getDistance(int from, int to) {
     return this->distances[from][to]; // returns -1 if not connected; Actually, to solve this problem Im assuming all vertices are connected;
 }
 Problem::Problem(int vehicleCapacity, int nVehicles, int maxBss, int maxBattery, int nClients, int bssCost,
-                 std::vector<float> nodeDemands, std::vector<std::vector<float>> distances) {
+                 std::vector<float> nodeDemands, std::vector<std::vector<float>> distances, std::vector<std::pair<float,float>> coords) {
     this->vehicleCapacity = vehicleCapacity;
     this->nVehicles = nVehicles;
     this->maxBss = maxBss;
@@ -18,6 +18,7 @@ Problem::Problem(int vehicleCapacity, int nVehicles, int maxBss, int maxBattery,
     this->bssCost = bssCost;
     this->nodeDemands = nodeDemands;
     this->distances = distances; // O(n2)
+    this->coords = coords;
 }
 //Problem::Problem(int vehicleCapacity, int nVehicles, int maxBss, int maxBattery, int nClients, int bssCost){
     //this->vehicleCapacity = vehicleCapacity;

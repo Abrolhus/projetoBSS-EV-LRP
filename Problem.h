@@ -9,7 +9,7 @@
 // BSS = Battery Switch Station
 class Problem {
 public:
-    Problem(int vehicleCapacity, int nVehicles, int maxBss, int maxBattery, int nClients, int bssCost, std::vector<float> nodeDemands, std::vector<std::vector<float>> distances);
+    Problem(int vehicleCapacity, int nVehicles, int maxBss, int maxBattery, int nClients, int bssCost, std::vector<float> nodeDemands, std::vector<std::vector<float>> distances, std::vector<std::pair<float, float>> coords);
     int getNVehicles(){ return this->nVehicles; }
     int getVehicleCapacity(){ return this->vehicleCapacity; }
     int getMaxBss(){ return this->maxBss; }
@@ -18,6 +18,7 @@ public:
     int getNNodes(){ return this->distances.size(); }
     float getBssCost(){ return (float)this->bssCost; }
     float getDistance(int from, int to);
+    std::pair<float, float> getCoords(int i){ return this->coords[i]; }
     float getDemand(int i){
         if(i >= this->getFirstBssIndex())
             return 0;
@@ -35,5 +36,6 @@ private:
 
     std::vector<float> nodeDemands; // index = node index;
     std::vector<std::vector<float>> distances; // "-1"->no edge;
+    std::vector<std::pair<float, float>> coords;
 };
 #endif //BSS_PROBLEM_H

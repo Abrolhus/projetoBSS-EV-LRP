@@ -11,6 +11,7 @@
 #include "Graph/Node.h"
 #include "Problem.h"
 #include "algorithm.h"
+#include "utils.h"
 #include <vector>
 #include <sstream>
 
@@ -30,11 +31,14 @@ int main(int argc, char const *argv[]) {
     Problem* problem = leitura(input_file);
     // greedyAlgorithm(problem);
     Solution* Sol = greedyAlg(problem);
-    bool isFeasible = isFeasibleSolution(Sol, problem);
+    solutionToCsv(Sol, problem);
+    float solCost;
+    Solution* LocalSearchSolution = new Solution(problem->getNVehicles());
+    bool isFeasible = isFeasibleSolution(Sol, problem, solCost);
+    localSearch(LocalSearchSolution, Sol, problem);
     cout << "...." << endl;
     return 0;
 }
-
 
 Problem* leitura(ifstream& input_file){
 
@@ -209,173 +213,10 @@ Problem* leitura(ifstream& input_file){
     }
     batteryCapacity = ceil(1.2*batteryCapacity);
     bssCost = ceil(0.5*batteryCapacity);
-    problem = new Problem(vehicleCapacity, nVehicles, bssCount, batteryCapacity, nodeCount-1, bssCost, nodeDemands, matrix);
+    problem = new Problem(vehicleCapacity, nVehicles, bssCount, batteryCapacity, nodeCount-1, bssCost, nodeDemands, matrix, allCoords);
     batteryCapacity = batteryCapacity / 2;
     cout << endl << "Bateria Max veículo: " << batteryCapacity << endl;
     input_file.close();
 
     return problem;
-}
-Graph* leituraParaGraph(ifstream& input_file){
-    //TODO(abreu): separar ou juntar parte de leitura de arquivo com criacao do grafo.
-    Graph* graph;
-
-    int nodeCount, vehicleCapacity, nodeBase, batteryCapacity, bssCost;
-    int bssCount;
-    std::vector<std::pair<int, int>> nodeCoords;
-    std::vector<std::pair<int, int>> bssCoords;
-    std::vector<int> nodeDemands;
-
-    // auxiliar variables:
-    stringstream ss;
-    int aux;
-    string line;
-    string value;
-
-    while(getline(input_file,line) && line != "END_FILE\r"){
-        if(line == "NODE_COUNT_SECTION\r") {
-            cout << endl;
-            while (getline(input_file, value) && value != "END_SECTION\r"){
-                if ( !value.empty() && value[value.size()-1] == '\r' ) {
-                    value = value.substr(0, value.size() - 1);
-                }
-                cout << value << endl;
-                nodeCount = std::stoi(value);
-                //cout << nodeCount << "node coutn << " << endl;
-            }
-        }
-        else if(line == "VEHICLE_CAP_SECTION\r") {
-            cout << endl;
-            while (getline(input_file, value) && value != "END_SECTION\r"){
-                if ( !value.empty() && value[value.size()-1] == '\r' ) {
-                    value = value.substr(0, value.size() - 1);
-                }
-                vehicleCapacity = std::stoi(value);
-                cout << value << endl;
-            }
-        }
-        else if(line == "NODE_COORD_SECTION\r") {
-            cout << endl;
-            std::pair<int, int> coord;
-            int nodeIndex;
-            while (getline(input_file, value) && value != "END_SECTION\r"){
-                if ( !value.empty() && value[value.size()-1] == '\r' ) {
-                    value = value.substr(0, value.size() - 1);
-                }
-                ss.clear();
-                ss << value;
-                ss >> nodeIndex;
-                ss >> aux;
-                coord.first = aux;
-                ss >> aux;
-                coord.second = aux;
-                cout << value << endl;
-                nodeCoords.push_back(coord);
-            }
-        }
-        else if(line == "NODE_DEMAND_SECTION\r") {
-            cout << endl;
-            int nodeIndex;
-            while (getline(input_file, value) && value != "END_SECTION\r"){
-                if ( !value.empty() && value[value.size()-1] == '\r' ) {
-                    value = value.substr(0, value.size() - 1);
-                }
-                ss.clear();
-                ss << value;
-                ss >> nodeIndex;
-                ss >> aux;
-                nodeDemands.push_back(aux);
-                cout << value << endl;
-            }
-        }
-        else if(line == "NODE_BASE_SECTION\r") {
-            cout << endl;
-            while (getline(input_file, value) && value != "END_SECTION\r"){
-                if ( !value.empty() && value[value.size()-1] == '\r' ) {
-                    value = value.substr(0, value.size() - 1);
-                }
-                ss.clear();
-                ss << value;
-                ss >> nodeBase;
-                cout << value << endl;
-            }
-        }
-        else if(line == "BATTERY_CAPACITY_SECTION\r") {
-            cout << endl;
-            while (getline(input_file, value) && value != "END_SECTION\r"){
-                if ( !value.empty() && value[value.size()-1] == '\r' ) {
-                    value = value.substr(0, value.size() - 1);
-                }
-                ss.clear();
-                ss << value;
-                ss >> batteryCapacity;
-                cout << value << endl;
-            }
-        }
-        else if(line == "CONSTRUCTION_COST_BSS_SECTION\r") {
-            cout << endl;
-            while (getline(input_file, value) && value != "END_SECTION\r"){
-                if ( !value.empty() && value[value.size()-1] == '\r' ) {
-                    value = value.substr(0, value.size() - 1);
-                }
-                ss.clear();
-                ss << value;
-                ss >> bssCost;
-                cout << value << endl;
-            }
-        }
-        else if(line == "CANDIDATE_BSS_COUNT_SECTION\r") {
-            cout << endl;
-            while (getline(input_file, value) && value != "END_SECTION\r"){
-                if ( !value.empty() && value[value.size()-1] == '\r' ) {
-                    value = value.substr(0, value.size() - 1);
-                }
-                if(value.empty()) continue;
-                ss.clear();
-                ss << value;
-                ss >> bssCount;
-                cout << value << endl;
-            }
-        }
-        else if(line == "CANDIDATE_BSS_COORD_SECTION\r") {
-            cout << endl;
-            std::pair<int, int> coord;
-            int bssIndex;
-            while (getline(input_file, value) && value != "END_SECTION\r"){
-                if ( !value.empty() && value[value.size()-1] == '\r' ) {
-                    value = value.substr(0, value.size() - 1);
-                }
-                ss.clear();
-                ss << value;
-                ss >> bssIndex;
-                ss >> aux;
-                coord.first = aux;
-                ss >> aux;
-                coord.second = aux;
-                bssCoords.push_back(coord);
-                cout << value << endl;
-            }
-        }
-    }
-
-    graph = new Graph(nodeCount, false, true, false);
-    for(int i = 0; i < nodeCoords.size(); i++){
-        graph->insertNode(i);
-        graph->getNode(i)->setWeight((float)nodeDemands[i]);
-    } // add N nodes to the graph with their respective demand stored as their weight;
-    for(int i = 0; i < nodeCoords.size(); i++){
-        for(int j = i+1; j < nodeCoords.size(); j++){
-            graph->insertEdge(i, j, distance(nodeCoords[i].first, nodeCoords[i].second, nodeCoords[j].first, nodeCoords[j].second));
-        }
-    }
-    // for(int i = 0; i < bssCoords.size(); i++){
-        // for(int j = 0; j < bssCoords.size(); j++){
-            // // graph->insertEdge(i, j, distance(bssCoords[i].first, bssCoords[i].second, bssCoords[j].first, bssCoords[j].second));
-            // graph->insertNode(id);
-            // id++;
-        // }
-    // }
-
-
-    return graph;
 }
