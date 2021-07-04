@@ -16,7 +16,7 @@ public:
     std::set<int> bssLocations;
     float cost;
     Solution& operator=(Solution const& that){
-        this->routes = std::vector<std::vector<int>>(that.routes.size());
+        //this->routes = std::vector<std::vector<int>>(that.routes.size());
         for(int k = 0; k < that.routes.size(); k++){
             this->routes[k] = that.routes[k];
         }

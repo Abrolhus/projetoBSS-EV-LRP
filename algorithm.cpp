@@ -32,16 +32,13 @@ Solution* greedyAlg(Problem* Prob){
     int getNearestBss(int currentNode, Problem* Prob, std::vector<bool>& wasVisitedByVehicle);
     bool canKVisitAnotherClient(Problem* Prob, std::set<int>& unvisitedClients, float vehicleCapacity);
     Solution* Sol = new Solution(Prob->getNVehicles());
-    //std::set<std::vector<float>, comparator_class> pathList;
     std::set<Path> pathList;
     std::set<int> possibleNextNodes;
     std::set<int> unvisitedClients;
     float constructionCosts = 0;
-    float totalCost = 0;
     std::vector<float> remainingVehicleCapacities(Prob->getNVehicles(), Prob->getVehicleCapacity());
     std::vector<float> remainingVehicleBattery(Prob->getNVehicles(), Prob->getVehicleMaxBattery());
     std::vector<bool> wasInstalledBss((Prob->getNNodes() - Prob->getNClients()), false); // if the bss was built
-    //std::vector<std::vector<int>> routes(Prob->getNVehicles());
     std::vector<std::vector<bool>> wasVisitedByK(Prob->getNVehicles(), {true});
     for(auto& rout : Sol->routes){
         rout.push_back(DEPOT);
@@ -62,7 +59,7 @@ Solution* greedyAlg(Problem* Prob){
             int currentNode = Sol->routes[k].back();
             int label;
             if(!canKVisitAnotherClient(Prob, unvisitedClients, remainingVehicleCapacities[k])){
-                // continue;
+                continue;
             }
             for (auto &nodeIndex : possibleNextNodes) {
                 float cost = 0;
@@ -91,7 +88,7 @@ Solution* greedyAlg(Problem* Prob){
                     }
                     if(Prob->getDistance(currentNode, nodeIndex) + Prob->getDistance(nodeIndex, DEPOT) > remainingVehicleBattery[k]){
                         needsRecharge = true;
-                    } // need recharge means that the vehicle cant go to the node and return to the depot without recharging in between
+                    } // needs recharge means that the vehicle cant go to the node and return to the depot without recharging in between
                     if ((!hasBssNearby && needsRecharge) || Prob->getDemand(nodeIndex) > remainingVehicleCapacities[k]) { continue; }
                     cost = Prob->getDistance(currentNode, nodeIndex);
                     label = nodeLabel::Client;
@@ -144,6 +141,7 @@ Solution* greedyAlg(Problem* Prob){
                         route.push_back(nearBss);
                         route.push_back(0);
                         wasInstalledBss[nearBss - Prob->getFirstBssIndex()] = true;
+                        Sol->cost += Prob->getBssCost();
                     }
                     else{
                         Sol->cost += Prob->getDistance(route.back(), DEPOT);
@@ -155,6 +153,7 @@ Solution* greedyAlg(Problem* Prob){
             for(int i = 0; i < Prob->getNNodes() - Prob->getNClients(); i++){
                 if(wasInstalledBss[i]){
                     Sol->bssLocations.insert(i + Prob->getFirstBssIndex());
+                    // Sol->cost += Prob->getBssCost();
                 }
             }
             return Sol;
@@ -213,69 +212,7 @@ bool canKVisitAnotherClient(Problem* Prob, std::set<int>& unvisitedClients, floa
     }
     return false;
 }
-void localSearch(Solution* NewSol, Solution* Sol, Problem* Prob){
-    void opt2(std::vector<int>& route, int a, int b);
-    // 2 opt
-    std::vector<float> bestRouteCosts(Prob->getNVehicles(), 1e7);
-    Solution* BestSol = new Solution(Prob->getNVehicles());
-    for(int k = 0; k < Sol->routes.size(); k++){
-        NewSol->routes[k].clear();
-        BestSol->routes[k].clear();
-        for(auto const& node : Sol->routes[k]){
-            NewSol->routes[k].push_back(node);
-            BestSol->routes[k].push_back(node);
-        }
-    }
-    NewSol->bssLocations = Sol->bssLocations;
-    BestSol->bssLocations = Sol->bssLocations;
-    NewSol->cost = Sol->cost;
-    BestSol->cost = Sol->cost;
 
-
-
-    for(int k = 0; k < Sol->routes.size(); k++){
-        std::vector<int> route(Sol->routes[k]); // N
-        float cost;
-        float bestCost = 1e7;
-
-        if(route.size() < 5){ continue; }
-        for(int i = 1; i < route.size()-1; i++){
-            for(int j = 2; j < route.size()-1; j++){
-                opt2(route, i, j);
-                // NewSol->routes[k] = route;
-                //for(int l = 0; l < route.size(); l++){
-                    //NewSol->routes[k][l] = route[l];
-                //}
-                bool isFeasible = isFeasibleRoute(route, Prob, Sol, cost);
-                std::cout << "wait";
-                if(isFeasible){
-                    if(cost < bestRouteCosts[k]){
-                        bestRouteCosts[k] = cost;
-
-                    }
-                }
-            }
-        }
-
-
-    }
-}
-void opt2(std::vector<int>& route, int a, int b){
-    void swap(std::vector<int>& v, int i, int j);
-    if(route.size() < 4){ return; }
-    for(int i = 1; i < route.size(); i++){
-        if(i >=a && i <= a + (b - a)/2){
-            swap(route, i, a + b - i);
-        }
-    }
-}
-
-void swap(std::vector<int>& v, int i, int j){
-    int aux;
-    aux = v[i];
-    v[i] = v[j];
-    v[j] = aux;
-}
 bool isFeasibleRoute(std::vector<int>& route, Problem* Prob, Solution* Sol, float& cost) {
     float vehicleCapacity = Prob->getVehicleCapacity();
     float vehicleBattery = Prob->getVehicleMaxBattery();

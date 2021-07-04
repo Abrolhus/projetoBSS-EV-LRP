@@ -32,10 +32,11 @@ int main(int argc, char const *argv[]) {
     // greedyAlgorithm(problem);
     Solution* Sol = greedyAlg(problem);
     solutionToCsv(Sol, problem);
-    float solCost;
+    float solCost, lsCost;
     Solution* LocalSearchSolution = new Solution(problem->getNVehicles());
     bool isFeasible = isFeasibleSolution(Sol, problem, solCost);
     localSearch(LocalSearchSolution, Sol, problem);
+    isFeasible = isFeasibleSolution(LocalSearchSolution, problem, lsCost);
     cout << "...." << endl;
     return 0;
 }
@@ -47,7 +48,7 @@ Problem* leitura(ifstream& input_file){
     string value;
 
     int nodeCount, vehicleCapacity, nodeBase, batteryCapacity, bssCost;
-    int nVehicles = 2; // TODO: get number of vehicles from filename;
+    int nVehicles = 10; // TODO: get number of vehicles from filename;
     int bssCount;
     std::vector<std::pair<float, float>> nodeCoords;
     std::vector<std::pair<float, float>> bssCoords;
